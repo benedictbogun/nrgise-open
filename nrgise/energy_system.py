@@ -12,6 +12,7 @@ from nrgise.components.capabilities.time_step_aware_mixin import TimeStepAwareMi
 from nrgise.components.component_abc import ComponentABC
 from nrgise.components.grid_builder.grid_builder_abc import GridBuilderABC
 from nrgise.tools import stretch_data_profile
+from nrgise.components.capabilities.publishes_dispatch_results_mixin import PublishesDispatchResultsMixin
 
 
 class EnergySystem:
@@ -96,8 +97,7 @@ class EnergySystem:
         Resets the EnergySystem by:
 
         - Setting controllable components which receive actions from a controller
-        - Calling `reset()` on all components of this EnergySystem which implement a `reset()` method.
-        - Setting the time to 0
+        - Calling `reset()` on all components of this EnergySystem which implement a `reset()` met
 
         Returns:
             The initial State of the EnergySystem
@@ -119,7 +119,8 @@ class EnergySystem:
 
         1. The action is dispatched to the corresponding controllable
             components. The actual power contribution is returned
-            (note that this can differ from the requested action due to physical constraints of the controllable components).
+            (note that this can differ from the requested action due to physical constraints of the controllable
+            components).
         2. The time step is incremented. This time step update is propagated to all components which implement
             `TimeStepAwareMixin`
             (e.g. if they contain a data profile which must be stepped through)
@@ -164,7 +165,6 @@ class EnergySystem:
                 )
         self._time_index = target_date_time_index.to_numpy()
 
-
     def _perform_action(self, action: dict[str, float]) -> dict[str, PowerContribution]:
         """
         Forwards the actions to be done to the controllables which perform the action (most likely
@@ -201,7 +201,7 @@ class EnergySystem:
     def _update_time(self, time_step: int) -> bool:
         """
         Updates the `time_step` of the EnergySystem. the `time_step` is taken as an orientation where you are
-        currently located in the data profiles of the EnergySystem.
+        currently  in the data profiles of the EnergySystem.
         """
         self._time_step = time_step
         simulation_done: bool = self._is_simulation_done()
@@ -245,6 +245,21 @@ class EnergySystem:
         for component in self._components:
             if isinstance(component, DataProfileMixin) and len(component.data_profile) != len(self._time_index):
                 raise ValueError('Data Profiles passed to components of the EnergySystem are not of equal length.')
+
+    def get_dispatch_results(self) -> dict[str, dict[str, float]]:
+        """
+        Return snapshots of the most recently applied operating values.
+
+        Call after simulate_one_time_step() and before the next dispatch.
+        Publishing components must retain their results across timestep updates.
+        """
+        results: dict[str, dict[str, float]] = {}
+
+        for component in self._components:
+            if isinstance(component, PublishesDispatchResultsMixin):
+                values = dict(component.get_dispatch_results())
+                results[component.label] = values
+        return results
 
     @property
     def components(self) -> List[ComponentABC]:

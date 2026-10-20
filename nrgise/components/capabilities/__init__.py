@@ -6,6 +6,8 @@ from nrgise.components.capabilities.controllable_mixin import ControllableMixin
 from nrgise.components.capabilities.data_profile_mixin import DataProfileMixin
 from nrgise.components.capabilities.publishes_state_mixin import PublishesStateMixin
 from nrgise.components.capabilities.time_step_aware_mixin import TimeStepAwareMixin
+from nrgise.components.capabilities.publishes_dispatch_results_mixin import PublishesDispatchResultsMixin
+
 
 __all__ = [
     "ContributesToPowerBalanceMixin",
@@ -13,4 +15,5 @@ __all__ = [
     "DataProfileMixin",
     "PublishesStateMixin",
     "TimeStepAwareMixin",
+    "PublishesDispatchResultsMixin",
 ]

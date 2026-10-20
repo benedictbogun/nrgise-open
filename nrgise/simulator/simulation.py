@@ -1,5 +1,5 @@
 # Assisted-by: OpenCode:fhgenie-pro/gpt-5.6-sol
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
@@ -29,8 +29,11 @@ class SimulationStepResult:
     power_requested: Union[float, ControlAction]
     power_applied: Union[float, Dict[str, PowerContribution]]
     additional_control_info: Any
+    dispatch_results: dict[str, dict[str, float]] = field(default_factory=dict)  # added
+
 
 SimulationHook = Callable[['Simulation', 'SimulationStepResult'], None]
+
 
 class Simulation:
     """
@@ -103,6 +106,7 @@ class Simulation:
                 power_balance_per_bus,
                 power_taken_from_grid_builder,
                 additional_control_info,
+                dispatch_results=self._energy_system.get_dispatch_results(),  # added for gas boiler
             )
             self._simulation_results.append(single_simulation_step_result)
             self._run_hooks(simulation_step_result=single_simulation_step_result)
@@ -143,7 +147,9 @@ class Simulation:
                                               power_applied: dict[str, PowerContribution],
                                               power_balance_per_bus: dict[Bus, float],
                                               power_taken_from_grid_builder: float,
-                                              additional_control_info: Any) -> SimulationStepResult:
+                                              additional_control_info: Any, dispatch_results: Optional[
+                                                  dict[str, dict[str, float]]] = None) -> SimulationStepResult:  
+                                                    # adapted for gas boiler
         """
         A single simulation step results contains all information necessary to do postprocessing (economics, plots, etc.)
         of the simulation.
@@ -197,6 +203,7 @@ class Simulation:
             power_requested=result_power_requested,
             power_applied=result_power_applied,
             additional_control_info=additional_control_info,
+            dispatch_results=({} if dispatch_results is None else dispatch_results),
         )
 
     # Assisted-by: OpenCode:fhgenie-pro/gpt-5.6-sol

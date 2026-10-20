@@ -13,9 +13,18 @@ from nrgise.components.load import Load
 from nrgise.components.power_profile import PowerProfile
 from nrgise.components.power_to_heat import PowerToHeat
 from nrgise.components.pv import Pv, PvCurtailable
-from nrgise.components.storage import AgingLinearCapacityWrapper, Battery, StorageABC, StorageWrapperABC
+from nrgise.components.steam_generator import SteamGenerator
+from nrgise.components.gas_boiler import GasBoiler
+from nrgise.components.storage import (
+    AgingLinearCapacityWrapper,
+    Battery,
+    StorageABC,
+    StorageWrapperABC,
+    ThermalStorage,
+)
 
 __all__ = [
+    "GasBoiler",
     "AgingLinearCapacityWrapper",
     "Battery",
     "ChargePoint",
@@ -32,7 +41,9 @@ __all__ = [
     "PublishesStateMixin",
     "Pv",
     "PvCurtailable",
+    "SteamGenerator",
     "StorageABC",
     "StorageWrapperABC",
+    "ThermalStorage",
     "TimeStepAwareMixin",
 ]

@@ -32,7 +32,7 @@ class Battery(StorageABC):
             efficiency_charge: float = 1,
             efficiency_discharge: float = 1,
             power_bus: Bus = ELECTRICITY_BUS,
-        ) -> None:
+    ) -> None:
         self._label = label
         self.nom_power = nom_power
         self._capacity = capacity

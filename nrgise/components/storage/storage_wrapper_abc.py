@@ -1,5 +1,6 @@
 # Assisted-by: OpenCode:fhgenie-pro/gpt-5.6-sol
 from abc import ABC
+from typing import Optional
 
 from nrgise.common.types import Bus
 from nrgise.components.storage.storage_abc import StorageABC
@@ -39,3 +40,7 @@ class StorageWrapperABC(StorageABC, ABC):
     @property
     def power_bus(self) -> Bus:
         return self.storage.power_bus
+
+    @property
+    def temperature(self) -> Optional[float]:
+        return getattr(self.storage, "temperature", None)

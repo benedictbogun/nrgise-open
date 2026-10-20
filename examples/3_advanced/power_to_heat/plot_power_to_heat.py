@@ -11,12 +11,19 @@ DEFAULT_OUTPUT_PATH = EXAMPLE_DIRECTORY / "results" / "power_to_heat.png"
 ELECTRIC_LOAD_COLUMN = (
     "uncontrolled_power_contribution_per_component_and_bus.electric_load.electricity"
 )
+STEAM_GENERATOR_LOSS_COLUMN = (
+    "uncontrolled_power_contribution_per_component_and_bus.steam_generator.heat"
+)  # added BBo
 HEAT_LOAD_COLUMN = "uncontrolled_power_contribution_per_component_and_bus.heat_load.heat"
 GRID_USAGE_COLUMN = "grid_builder_usage"
 POWER_TO_HEAT_ELECTRICITY_COLUMN = "power_applied.power_to_heat.electricity"
 THERMAL_STORAGE_POWER_COLUMN = "power_applied.thermal_storage.heat"
 HEAT_BALANCE_COLUMN = "power_balance_per_bus.heat"
 THERMAL_STORAGE_SOC_COLUMN = "components_states.thermal_storage.soc"
+POWER_TO_HEAT_HEAT_COLUMN = "power_applied.power_to_heat.heat"
+GAS_BOILER_HEAT_COLUMN = "power_applied.gas_boiler.heat"
+GAS_BOILER_FUEL_COLUMN = "dispatch_results.gas_boiler.fuel_input_kw"
+GAS_BOILER_LOSS_COLUMN = "dispatch_results.gas_boiler.loss_kw"
 
 
 def plot_results(
@@ -27,10 +34,15 @@ def plot_results(
     """Plot electrical and heat power flows from saved simulation results."""
     results = pd.read_csv(results_path, index_col="date_time", parse_dates=["date_time"])
 
-    figure, (electric_axis, heat_axis, storage_axis) = plt.subplots(
-        nrows=3,
+    figure, (
+        electric_axis,
+        heat_axis,
+        storage_axis,
+        gas_axis,
+    ) = plt.subplots(
+        nrows=4,
         sharex=True,
-        figsize=(10, 9),
+        figsize=(11, 12),
     )
 
     electric_axis.step(
@@ -73,6 +85,31 @@ def plot_results(
         where="post",
         label="Thermal storage contribution",
     )
+    heat_axis.step(
+        results.index,
+        results[POWER_TO_HEAT_HEAT_COLUMN],
+        where="post",
+        label="P2H thermal output",
+    )
+    heat_axis.step(
+        results.index,
+        results[GAS_BOILER_HEAT_COLUMN],
+        where="post",
+        label="Gas boiler thermal output",
+    )
+    if STEAM_GENERATOR_LOSS_COLUMN in results.columns:
+        heat_axis.step(
+            results.index,
+            -results[STEAM_GENERATOR_LOSS_COLUMN],
+            where="post",
+            label="Steam generator losses",
+        )
+        heat_axis.step(
+            results.index,
+            -results[HEAT_LOAD_COLUMN] + -results[STEAM_GENERATOR_LOSS_COLUMN],
+            where="post",
+            label="Heat demand including steam conversion",
+        )
     heat_axis.set_ylabel("Thermal power [kW]")
     heat_axis.grid(True)
     heat_axis.legend()
@@ -88,6 +125,29 @@ def plot_results(
     storage_axis.set_ylim(0, 105)
     storage_axis.grid(True)
     storage_axis.legend()
+
+    gas_axis.step(
+        results.index,
+        results[GAS_BOILER_HEAT_COLUMN],
+        where="post",
+        label="Gas boiler heat output",
+    )
+    gas_axis.step(
+        results.index,
+        results[GAS_BOILER_FUEL_COLUMN],
+        where="post",
+        label="Gas boiler fuel input",
+    )
+    gas_axis.step(
+        results.index,
+        results[GAS_BOILER_LOSS_COLUMN],
+        where="post",
+        label="Gas boiler conversion losses",
+    )
+    gas_axis.set_xlabel("Time")
+    gas_axis.set_ylabel("Power [kW]")
+    gas_axis.grid(True)
+    gas_axis.legend()
 
     figure.suptitle("Power-to-heat example")
     figure.tight_layout()

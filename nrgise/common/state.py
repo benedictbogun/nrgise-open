@@ -8,6 +8,8 @@ from nrgise.common.types import Bus, PowerContribution
 from nrgise.components.capabilities.contributes_to_power_balance_mixin import ContributesToPowerBalanceMixin
 from nrgise.components.capabilities.publishes_state_mixin import PublishesStateMixin
 from nrgise.components.component_abc import ComponentABC
+from nrgise.components.load import Load
+from nrgise.components.steam_generator import SteamGenerator
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,8 @@ class State:
         interface. The state of the components is published by their implementation of `get_state()`.
     - Information about uncontrolled power contributions per bus. These contributions happen independently of system
         control.
+      An optional SteamGenerator adds conversion losses for useful-heat Loads
+      on its bus, without applying losses to storage charging.
     """
 
     time_step: int
@@ -86,4 +90,47 @@ def _get_state_values(
         if include_components_state and isinstance(component, PublishesStateMixin):
             components_states[component.label] = component.get_state()
 
+    _add_steam_generator_losses(components, power_balances, power_contributions)
     return power_balances, power_contributions, components_states
+
+
+# Assisted-by: Copilot SDK:gpt-6.1-sol
+def _add_steam_generator_losses(
+        components: List[ComponentABC],
+        power_balances: dict[Bus, float],
+        power_contributions: dict[str, PowerContribution],
+) -> None:
+    """
+    Caution: Generated methodological logic; verification needed.
+
+    Method summary:
+    - Sum consuming Load contributions per configured bus and add conversion losses.
+
+    Reasoning:
+    - Use gross useful demand, not the net bus balance, so heat generation and
+      storage operation cannot mask or duplicate steam conversion losses.
+
+    Assumptions and Limitations:
+    - Useful demand is represented by Load components; other consumers are not
+      steam loads. All Loads on a configured bus pass through one generator.
+    - Sources, including gas burners, supply heat upstream of that generator.
+    - At most one generator may be registered per bus.
+
+    Confidence Level: High
+    """
+    configured_buses: set[Bus] = set()
+    for component in components:
+        if not isinstance(component, SteamGenerator):
+            continue
+        bus = component.heat_bus
+        if bus in configured_buses:
+            raise ValueError(f"Only one SteamGenerator may be configured for bus {bus!r}.")
+        configured_buses.add(bus)
+        useful_heat_demand = sum(
+            max(-power_contributions[load.label].get(bus, 0.0), 0.0)
+            for load in components
+            if isinstance(load, Load)
+        )
+        contribution = component.loss_power_contribution(useful_heat_demand)
+        power_contributions[component.label] = contribution
+        power_balances[bus] = power_balances.get(bus, 0.0) + contribution[bus]

@@ -39,7 +39,7 @@ def test_power_profile_component_reset(component_class):
         power_profile_component = component_class(label='', power_profile=[1, 2, 3])
         power_profile_component.reset()
         assert power_profile_component.uncontrolled_power_contributions()[ELECTRICITY_BUS] == 1
-
+        
 
 def test_pv_system_warns_when_negative_power_contribution():
     with warnings.catch_warnings(record=True) as w:
@@ -69,6 +69,7 @@ def test_grid_capacity_limits():
     with pytest.raises(Exception) as exception_info:
         grid.supply_power(120)
     assert exception_info.errisinstance(ValueError)
+
 
 def test_controllable_pv_component():
     pv = PvCurtailable(label='pv', power_profile=np.array([100, 100, 100]))
