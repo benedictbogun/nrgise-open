@@ -36,11 +36,12 @@ def plot_results(
 
     figure, (
         electric_axis,
+        gas_axis,
         heat_axis,
         storage_axis,
-        gas_axis,
     ) = plt.subplots(
         nrows=4,
+        ncols=1,
         sharex=True,
         figsize=(11, 12),
     )
@@ -66,6 +67,29 @@ def plot_results(
     electric_axis.set_ylabel("Electrical power [kW]")
     electric_axis.grid(True)
     electric_axis.legend()
+
+    gas_axis.step(
+        results.index,
+        results[GAS_BOILER_HEAT_COLUMN],
+        where="post",
+        label="Gas boiler heat output",
+    )
+    gas_axis.step(
+        results.index,
+        results[GAS_BOILER_FUEL_COLUMN],
+        where="post",
+        label="Gas boiler fuel input",
+    )
+    gas_axis.step(
+        results.index,
+        results[GAS_BOILER_LOSS_COLUMN],
+        where="post",
+        label="Gas boiler conversion losses",
+    )
+    gas_axis.set_xlabel("Time")
+    gas_axis.set_ylabel("Gas Power [kW]")
+    gas_axis.grid(True)
+    gas_axis.legend()
 
     heat_axis.step(
         results.index,
@@ -100,19 +124,18 @@ def plot_results(
     if STEAM_GENERATOR_LOSS_COLUMN in results.columns:
         heat_axis.step(
             results.index,
-            -results[STEAM_GENERATOR_LOSS_COLUMN],
-            where="post",
-            label="Steam generator losses",
-        )
-        heat_axis.step(
-            results.index,
             -results[HEAT_LOAD_COLUMN] + -results[STEAM_GENERATOR_LOSS_COLUMN],
             where="post",
             label="Heat demand including steam conversion",
         )
     heat_axis.set_ylabel("Thermal power [kW]")
     heat_axis.grid(True)
-    heat_axis.legend()
+    heat_axis.legend(
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1.0),
+        borderaxespad=0,
+        fontsize=9,
+        )
 
     storage_axis.step(
         results.index,
@@ -126,33 +149,10 @@ def plot_results(
     storage_axis.grid(True)
     storage_axis.legend()
 
-    gas_axis.step(
-        results.index,
-        results[GAS_BOILER_HEAT_COLUMN],
-        where="post",
-        label="Gas boiler heat output",
-    )
-    gas_axis.step(
-        results.index,
-        results[GAS_BOILER_FUEL_COLUMN],
-        where="post",
-        label="Gas boiler fuel input",
-    )
-    gas_axis.step(
-        results.index,
-        results[GAS_BOILER_LOSS_COLUMN],
-        where="post",
-        label="Gas boiler conversion losses",
-    )
-    gas_axis.set_xlabel("Time")
-    gas_axis.set_ylabel("Power [kW]")
-    gas_axis.grid(True)
-    gas_axis.legend()
-
     figure.suptitle("Power-to-heat example")
     figure.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    figure.savefig(output_path, dpi=150, bbox_inches="tight")
+    figure.savefig(output_path, dpi=300, bbox_inches="tight")
 
     if show:
         plt.show()

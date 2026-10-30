@@ -10,3 +10,4 @@ site/
 examples/**/results/
 .mypy_cache
 .coverage
+examples/3_advanced/power_to_heat_mpc/input/*.csv

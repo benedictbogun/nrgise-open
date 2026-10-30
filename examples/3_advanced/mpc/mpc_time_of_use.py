@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from common import plot_tou, read_and_preprocess_data
 
 from nrgise import EnergySystem, Simulation
@@ -58,12 +59,12 @@ if __name__ == '__main__':
 
     # ## uncomment to save results
     # # Save the csv file in the same directory as the current py file.
-    # dir_path = os.path.dirname(os.path.realpath(__file__)) #noqa:ERA001
-    # if not os.path.exists(dir_path + "/results/"):
-    #     os.makedirs(dir_path + "/results/") #noqa:ERA001
-    # csv_file_path = os.path.join(dir_path, 'results/simulation_results.csv') #noqa:ERA001
-    #
-    # # print results to csv
-    # results.to_csv(csv_file_path) #noqa:ERA001
-    #
-    # fig1.savefig(dir_path+"/results/" + "/mpc-time-of-use.jpg") #noqa:ERA001
+    dir_path = os.path.dirname(os.path.realpath(__file__)) #noqa:ERA001
+    if not os.path.exists(dir_path + "/results/"):
+         os.makedirs(dir_path + "/results/") #noqa:ERA001
+    csv_file_path = os.path.join(dir_path, 'results/simulation_results.csv') #noqa:ERA001
+    
+     # print results to csv
+    results.to_csv(csv_file_path) #noqa:ERA001
+
+    fig1.savefig(dir_path+"/results/" + "/mpc-time-of-use.jpg") #noqa:ERA001

@@ -26,27 +26,33 @@ class ThermalStorage(StorageABC):
     def __init__(
         self,
         label: str,
-        nom_power: float,
         capacity: float,  # max storage capacity
         time_delta_seconds: int,
         loss_per_timestep: float,  # added, Locomosa 0.0004 (hourly resolution)
+        nom_power: float,  # charge/discharge limit, might be necessary to separate them
+        max_charge_power: Optional[float] = None,  # added a optional maximum charge power
+        max_discharge_power: Optional[float] = None,
         initial_soc: float = 0,
         efficiency_charge: float = 1,  # not implemented in locomosa
         efficiency_discharge: float = 1,  # not implemented in locomosa
-        power_bus: Bus = HEAT_BUS,
-        temperature: Optional[float] = None,
+        heat_bus: Bus = HEAT_BUS,
     ) -> None:
         self._label = label
-        self.nom_power = nom_power
         self._capacity = capacity
         self._time_delta_seconds = time_delta_seconds
         self._loss_per_timestep = loss_per_timestep
+        self._max_charge_power = (
+            max_charge_power if max_charge_power is not None else nom_power
+        )
+        self._max_discharge_power = (
+            max_discharge_power if max_discharge_power is not None else nom_power
+        )
+        self._nom_power = max(self._max_charge_power, self._max_discharge_power)
         self._initial_soc = initial_soc
         self._soc = initial_soc
         self._efficiency_charge = efficiency_charge
         self._efficiency_discharge = efficiency_discharge
-        self._power_bus = power_bus
-        self._temperature = temperature
+        self._heat_bus = heat_bus
 
     # Assisted-by: GitHub Copilot:GPT-6 Luna
     def set_power_contribution(self, power: float) -> PowerContribution:
@@ -77,8 +83,12 @@ class ThermalStorage(StorageABC):
         soc = self._soc
         efficiency_charge = self._efficiency_charge
         efficiency_discharge = self._efficiency_discharge
+        heat_bus = self._heat_bus
 
-        power = super()._enforce_power_limit(power, self.nom_power)
+        power_limit = (
+            self._max_discharge_power if power >= 0 else self._max_charge_power
+            )
+        power = super()._enforce_power_limit(power, power_limit)
 
         if power > 0 and capacity != 0:  # Discharge
             virtual_soc = (
@@ -100,7 +110,7 @@ class ThermalStorage(StorageABC):
         else:  # Edge Case: applies only if power or capacity are 0
             power = 0
 
-        return {self._power_bus: power}
+        return {self._heat_bus: power}
 
     def reset(self) -> None:
         """
@@ -115,8 +125,16 @@ class ThermalStorage(StorageABC):
         return {"soc": self._soc}  # , "temperature": self._temperature}
 
     @property
+    def capacity(self) -> float:
+        return self._capacity
+    
+    @property
     def initial_soc(self) -> float:
         return self._initial_soc
+
+    @property
+    def loss_per_timestep(self) -> float:
+        return self._loss_per_timestep
 
     @property
     def eta_charge(self) -> float:
@@ -127,8 +145,16 @@ class ThermalStorage(StorageABC):
         return self._efficiency_discharge
 
     @property
-    def capacity(self) -> float:
-        return self._capacity
+    def max_charge_power(self) -> float:
+        return self._max_charge_power
+
+    @property
+    def max_discharge_power(self) -> float:
+        return self._max_discharge_power
+
+    @property
+    def nom_power(self) -> float:
+        return self._nom_power
 
     @property
     def soc(self) -> float:
@@ -143,13 +169,10 @@ class ThermalStorage(StorageABC):
         return self._time_delta_seconds
 
     @property
-    def power_bus(self) -> Bus:
-        return self._power_bus
+    def heat_bus(self) -> Bus:
+        return self._heat_bus
 
     @property
-    def temperature(self) -> Optional[float]:
-        return self._temperature
-
-    # @temperature.setter
-    # def temperature(self, value: Optional[float]) -> None:
-    #     self._temperature = value
+    def power_bus(self) -> Bus:
+        """Expose the heat bus through the common storage interface."""
+        return self._heat_bus

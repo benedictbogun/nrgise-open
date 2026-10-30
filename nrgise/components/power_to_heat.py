@@ -40,20 +40,20 @@ class PowerToHeat(ControllableMixin):
             label: str,
             electric_heater_size: Optional[float],
             efficiency: float = 1.0,  # default for a lossless heater is 1.0, locomosa has 0.95
-            electricity_bus: Bus = ELECTRICITY_BUS,
+            power_bus: Bus = ELECTRICITY_BUS,
             heat_bus: Bus = HEAT_BUS,
     ) -> None:
         if efficiency <= 0 or efficiency > 1:
             raise ValueError("`efficiency` must be in the range (0, 1].")
         if electric_heater_size is not None and electric_heater_size < 0:
             raise ValueError("`electric_heater_size` must be non-negative.")
-        if electricity_bus == heat_bus:
-            raise ValueError("`electricity_bus` and `heat_bus` must be different.")
+        if power_bus == heat_bus:
+            raise ValueError("`power_bus` and `heat_bus` must be different.")
 
         self._label = label
         self._efficiency = efficiency
         self._electric_heater_size = electric_heater_size
-        self._electricity_bus = electricity_bus
+        self._power_bus = power_bus
         self._heat_bus = heat_bus
 
     def set_power_contribution(self, power: float) -> PowerContribution:
@@ -88,7 +88,7 @@ class PowerToHeat(ControllableMixin):
             actual_input = min(actual_input, self._electric_heater_size)
 
         return {
-            self._electricity_bus: -actual_input,
+            self._power_bus: -actual_input,
             self._heat_bus: actual_input * self._efficiency,
         }
 
@@ -108,8 +108,8 @@ class PowerToHeat(ControllableMixin):
         return self._electric_heater_size
 
     @property
-    def electricity_bus(self) -> Bus:
-        return self._electricity_bus
+    def power_bus(self) -> Bus:
+        return self._power_bus
 
     @property
     def heat_bus(self) -> Bus:
